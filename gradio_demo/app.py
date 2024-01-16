@@ -17,7 +17,8 @@ from photomaker.pipeline import PhotoMakerStableDiffusionXLPipeline
 from photomaker.model_util import load_models_xl, get_torch_device, torch_gc
 from style_template import styles
 
-def main(pretrained_model_name_or_path = "SG161222/RealVisXL_V3.0"):
+
+def main(pretrained_model_name_or_path="SG161222/RealVisXL_V3.0"):
     # global variable
     device = get_torch_device()
     MAX_SEED = np.iinfo(np.int32).max
@@ -25,17 +26,25 @@ def main(pretrained_model_name_or_path = "SG161222/RealVisXL_V3.0"):
     DEFAULT_STYLE_NAME = "Photographic (Default)"
 
     # download PhotoMaker checkpoint to cache
-    photomaker_ckpt = hf_hub_download(repo_id="TencentARC/PhotoMaker", filename="photomaker-v1.bin", repo_type="model")
-    
-    if pretrained_model_name_or_path.endswith(".ckpt") or pretrained_model_name_or_path.endswith(".safetensors"):
-        scheduler_kwargs = hf_hub_download(repo_id="SG161222/RealVisXL_V3.0",subfolder="scheduler",filename="scheduler_config.json")
-        
-        (tokenizers, text_encoders, unet, _ , vae) = load_models_xl(
+    photomaker_ckpt = hf_hub_download(
+        repo_id="TencentARC/PhotoMaker", filename="photomaker-v1.bin", repo_type="model"
+    )
+
+    if pretrained_model_name_or_path.endswith(
+        ".ckpt"
+    ) or pretrained_model_name_or_path.endswith(".safetensors"):
+        scheduler_kwargs = hf_hub_download(
+            repo_id="SG161222/RealVisXL_V3.0",
+            subfolder="scheduler",
+            filename="scheduler_config.json",
+        )
+
+        (tokenizers, text_encoders, unet, _, vae) = load_models_xl(
             pretrained_model_name_or_path=pretrained_model_name_or_path,
             scheduler_name=None,
             weight_dtype=torch.float16,
         )
-        
+
         scheduler = EulerDiscreteScheduler.from_config(scheduler_kwargs)
         pipe = PhotoMakerStableDiffusionXLPipeline(
             vae=vae,
@@ -49,9 +58,9 @@ def main(pretrained_model_name_or_path = "SG161222/RealVisXL_V3.0"):
 
     else:
         pipe = PhotoMakerStableDiffusionXLPipeline.from_pretrained(
-            pretrained_model_name_or_path, 
-            torch_dtype=torch.bfloat16, 
-            use_safetensors=True, 
+            pretrained_model_name_or_path,
+            torch_dtype=torch.bfloat16,
+            use_safetensors=True,
             variant="fp16",
         ).to(device)
 
@@ -63,34 +72,50 @@ def main(pretrained_model_name_or_path = "SG161222/RealVisXL_V3.0"):
         os.path.dirname(photomaker_ckpt),
         subfolder="",
         weight_name=os.path.basename(photomaker_ckpt),
-        trigger_word="img"
+        trigger_word="img",
     )
-
 
     # pipe.set_adapters(["photomaker"], adapter_weights=[1.0])
     pipe.fuse_lora()
 
     @spaces.GPU(enable_queue=True)
-    def generate_image(upload_images, prompt, negative_prompt, style_name, num_steps, style_strength_ratio, num_outputs, guidance_scale, seed, progress=gr.Progress(track_tqdm=True)):
+    def generate_image(
+        upload_images,
+        prompt,
+        negative_prompt,
+        style_name,
+        num_steps,
+        style_strength_ratio,
+        num_outputs,
+        guidance_scale,
+        seed,
+        progress=gr.Progress(track_tqdm=True),
+    ):
         # check the trigger word
         image_token_id = pipe.tokenizer.convert_tokens_to_ids(pipe.trigger_word)
         input_ids = pipe.tokenizer.encode(prompt)
         if image_token_id not in input_ids:
-            raise gr.Error(f"Cannot find the trigger word '{pipe.trigger_word}' in text prompt! Please refer to step 2️⃣")
+            raise gr.Error(
+                f"Cannot find the trigger word '{pipe.trigger_word}' in text prompt! Please refer to step 2️⃣"
+            )
 
         if input_ids.count(image_token_id) > 1:
-            raise gr.Error(f"Cannot use multiple trigger words '{pipe.trigger_word}' in text prompt!")
+            raise gr.Error(
+                f"Cannot use multiple trigger words '{pipe.trigger_word}' in text prompt!"
+            )
 
         # apply the style template
         prompt, negative_prompt = apply_style(style_name, prompt, negative_prompt)
 
         if upload_images is None:
-            raise gr.Error(f"Cannot find any input face image! Please refer to step 1️⃣")
+            raise gr.Error(
+                f"Cannot find any input face image! Please refer to step 1️⃣"
+            )
 
         input_id_images = []
         for img in upload_images:
             input_id_images.append(load_image(img))
-        
+
         generator = torch.Generator(device=device).manual_seed(seed)
 
         print("Start inference...")
@@ -113,14 +138,26 @@ def main(pretrained_model_name_or_path = "SG161222/RealVisXL_V3.0"):
         return images, gr.update(visible=True)
 
     def swap_to_gallery(images):
-        return gr.update(value=images, visible=True), gr.update(visible=True), gr.update(visible=False)
+        return (
+            gr.update(value=images, visible=True),
+            gr.update(visible=True),
+            gr.update(visible=False),
+        )
 
     def upload_example_to_gallery(images, prompt, style, negative_prompt):
-        return gr.update(value=images, visible=True), gr.update(visible=True), gr.update(visible=False)
+        return (
+            gr.update(value=images, visible=True),
+            gr.update(visible=True),
+            gr.update(visible=False),
+        )
 
     def remove_back_to_files():
-        return gr.update(visible=False), gr.update(visible=False), gr.update(visible=True)
-        
+        return (
+            gr.update(visible=False),
+            gr.update(visible=False),
+            gr.update(visible=True),
+        )
+
     def remove_tips():
         return gr.update(visible=False)
 
@@ -129,25 +166,29 @@ def main(pretrained_model_name_or_path = "SG161222/RealVisXL_V3.0"):
             seed = random.randint(0, MAX_SEED)
         return seed
 
-    def apply_style(style_name: str, positive: str, negative: str = "") -> tuple[str, str]:
+    def apply_style(
+        style_name: str, positive: str, negative: str = ""
+    ) -> tuple[str, str]:
         p, n = styles.get(style_name, styles[DEFAULT_STYLE_NAME])
-        return p.replace("{prompt}", positive), n + ' ' + negative
+        return p.replace("{prompt}", positive), n + " " + negative
 
     def get_image_path_list(folder_name):
         image_basename_list = os.listdir(folder_name)
-        image_path_list = sorted([os.path.join(folder_name, basename) for basename in image_basename_list])
+        image_path_list = sorted(
+            [os.path.join(folder_name, basename) for basename in image_basename_list]
+        )
         return image_path_list
 
     def get_example():
         case = [
             [
-                get_image_path_list('./examples/scarletthead_woman'),
+                get_image_path_list("./examples/scarletthead_woman"),
                 "instagram photo, portrait photo of a woman img, colorful, perfect face, natural skin, hard shadows, film grain",
                 "(No style)",
                 "(asymmetry, worst quality, low quality, illustration, 3d, 2d, painting, cartoons, sketch), open mouth",
             ],
             [
-                get_image_path_list('./examples/newton_man'),
+                get_image_path_list("./examples/newton_man"),
                 "sci-fi, closeup portrait photo of a man img wearing the sunglasses in Iron man suit, face, slim body, high quality, film grain",
                 "(No style)",
                 "(asymmetry, worst quality, low quality, illustration, 3d, 2d, painting, cartoons, sketch), open mouth",
@@ -208,12 +249,12 @@ def main(pretrained_model_name_or_path = "SG161222/RealVisXL_V3.0"):
     3. For **faster** speed, reduce the number of generated images and sampling steps. However, please note that reducing the sampling steps may compromise the ID fidelity.
     """
     # We have provided some generate examples and comparisons at: [this website]().
-    # 3. Don't make the prompt too long, as we will trim it if it exceeds 77 tokens. 
+    # 3. Don't make the prompt too long, as we will trim it if it exceeds 77 tokens.
     # 4. When generating realistic photos, if it's not real enough, try switching to our other gradio application [PhotoMaker-Realistic]().
 
-    css = '''
+    css = """
     .gradio-container {width: 85% !important}
-    '''
+    """
     with gr.Blocks(css=css) as demo:
         gr.Markdown(logo)
         gr.Markdown(title)
@@ -226,25 +267,35 @@ def main(pretrained_model_name_or_path = "SG161222/RealVisXL_V3.0"):
         with gr.Row():
             with gr.Column():
                 files = gr.Files(
-                            label="Drag (Select) 1 or more photos of your face",
-                            file_types=["image"]
-                        )
-                uploaded_files = gr.Gallery(label="Your images", visible=False, columns=5, rows=1, height=200)
+                    label="Drag (Select) 1 or more photos of your face",
+                    file_types=["image"],
+                )
+                uploaded_files = gr.Gallery(
+                    label="Your images", visible=False, columns=5, rows=1, height=200
+                )
                 with gr.Column(visible=False) as clear_button:
-                    remove_and_reupload = gr.ClearButton(value="Remove and upload new ones", components=files, size="sm")
-                prompt = gr.Textbox(label="Prompt",
-                        info="Try something like 'a photo of a man/woman img', 'img' is the trigger word.",
-                        placeholder="A photo of a [man/woman img]...")
-                style = gr.Dropdown(label="Style template", choices=STYLE_NAMES, value=DEFAULT_STYLE_NAME)
+                    remove_and_reupload = gr.ClearButton(
+                        value="Remove and upload new ones", components=files, size="sm"
+                    )
+                prompt = gr.Textbox(
+                    label="Prompt",
+                    info="Try something like 'a photo of a man/woman img', 'img' is the trigger word.",
+                    placeholder="A photo of a [man/woman img]...",
+                )
+                style = gr.Dropdown(
+                    label="Style template",
+                    choices=STYLE_NAMES,
+                    value=DEFAULT_STYLE_NAME,
+                )
                 submit = gr.Button("Submit")
 
                 with gr.Accordion(open=False, label="Advanced Options"):
                     negative_prompt = gr.Textbox(
-                        label="Negative Prompt", 
+                        label="Negative Prompt",
                         placeholder="low quality",
                         value="nsfw, lowres, bad anatomy, bad hands, text, error, missing fingers, extra digit, fewer digits, cropped, worst quality, low quality, normal quality, jpeg artifacts, signature, watermark, username, blurry",
                     )
-                    num_steps = gr.Slider( 
+                    num_steps = gr.Slider(
                         label="Number of sample steps",
                         minimum=20,
                         maximum=100,
@@ -282,14 +333,22 @@ def main(pretrained_model_name_or_path = "SG161222/RealVisXL_V3.0"):
                     randomize_seed = gr.Checkbox(label="Randomize seed", value=True)
             with gr.Column():
                 gallery = gr.Gallery(label="Generated Images")
-                usage_tips = gr.Markdown(label="Usage tips of PhotoMaker", value=tips ,visible=False)
+                usage_tips = gr.Markdown(
+                    label="Usage tips of PhotoMaker", value=tips, visible=False
+                )
 
-            files.upload(fn=swap_to_gallery, inputs=files, outputs=[uploaded_files, clear_button, files])
-            remove_and_reupload.click(fn=remove_back_to_files, outputs=[uploaded_files, clear_button, files])
+            files.upload(
+                fn=swap_to_gallery,
+                inputs=files,
+                outputs=[uploaded_files, clear_button, files],
+            )
+            remove_and_reupload.click(
+                fn=remove_back_to_files, outputs=[uploaded_files, clear_button, files]
+            )
 
             submit.click(
                 fn=remove_tips,
-                outputs=usage_tips,            
+                outputs=usage_tips,
             ).then(
                 fn=randomize_seed_fn,
                 inputs=[seed, randomize_seed],
@@ -298,8 +357,18 @@ def main(pretrained_model_name_or_path = "SG161222/RealVisXL_V3.0"):
                 api_name=False,
             ).then(
                 fn=generate_image,
-                inputs=[files, prompt, negative_prompt, style, num_steps, style_strength_ratio, num_outputs, guidance_scale, seed],
-                outputs=[gallery, usage_tips]
+                inputs=[
+                    files,
+                    prompt,
+                    negative_prompt,
+                    style,
+                    num_steps,
+                    style_strength_ratio,
+                    num_outputs,
+                    guidance_scale,
+                    seed,
+                ],
+                outputs=[gallery, usage_tips],
             )
 
         gr.Examples(
@@ -309,14 +378,17 @@ def main(pretrained_model_name_or_path = "SG161222/RealVisXL_V3.0"):
             fn=upload_example_to_gallery,
             outputs=[uploaded_files, clear_button, files],
         )
-        
+
         gr.Markdown(article)
-        
+
     demo.launch()
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--pretrained_model_name_or_path", type=str, default="SG161222/RealVisXL_V3.0")
+    parser.add_argument(
+        "--pretrained_model_name_or_path", type=str, default="SG161222/RealVisXL_V3.0"
+    )
     args = parser.parse_args()
 
     main(args.pretrained_model_name_or_path)
