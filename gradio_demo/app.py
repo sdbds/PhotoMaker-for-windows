@@ -18,25 +18,6 @@ from photomaker.pipeline import PhotoMakerStableDiffusionXLPipeline
 from photomaker.model_util import load_models_xl, get_torch_device, torch_gc
 from style_template import styles
 
-from photomaker import PhotoMakerStableDiffusionXLPipeline
-from style_template import styles
-
-# global variable
-base_model_path = 'SG161222/RealVisXL_V3.0'
-try:
-    if torch.cuda.is_available():
-        device = "cuda"
-    elif sys.platform == "darwin" and torch.backends.mps.is_available():
-        device = "mps"
-    else:
-        device = "cpu"
-except:
-    device = "cpu"
-
-MAX_SEED = np.iinfo(np.int32).max
-STYLE_NAMES = list(styles.keys())
-DEFAULT_STYLE_NAME = "Photographic (Default)"
-
 def main(pretrained_model_name_or_path="SG161222/RealVisXL_V3.0"):
     # global variable
     device = get_torch_device()
