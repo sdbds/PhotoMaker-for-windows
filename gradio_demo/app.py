@@ -167,8 +167,7 @@ def main(pretrained_model_name_or_path="SG161222/RealVisXL_V3.0"):
         return seed
 
     def apply_style(
-        style_name: str, positive: str, negative: str = ""
-    ) -> tuple[str, str]:
+        style_name: str, positive: str, negative: str = ""):
         p, n = styles.get(style_name, styles[DEFAULT_STYLE_NAME])
         return p.replace("{prompt}", positive), n + " " + negative
 
