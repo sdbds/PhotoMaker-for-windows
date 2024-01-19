@@ -6,7 +6,7 @@
 <!-- ## <div align="center"><b>PhotoMaker</b></div> -->
 <div align="center">
   
-## PhotoMaker: Customizing Realistic Human Photos via Stacked ID Embedding
+## PhotoMaker: Customizing Realistic Human Photos via Stacked ID Embedding  [![Paper page](https://huggingface.co/datasets/huggingface/badges/resolve/main/paper-page-md-dark.svg)](https://huggingface.co/papers/2312.04461)
 [[Paper](https://huggingface.co/papers/2312.04461)] &emsp; [[Project Page](https://photo-maker.github.io)] &emsp; [[Model Card](https://huggingface.co/TencentARC/PhotoMaker)] <br>
 
 [[🤗 Demo (Realistic)](https://huggingface.co/spaces/TencentARC/PhotoMaker)] &emsp; [[🤗 Demo (Stylization)](https://huggingface.co/spaces/TencentARC/PhotoMaker-Style)] <be>
@@ -25,8 +25,10 @@ Official implementation of **[PhotoMaker: Customizing Realistic Human Photos via
 2. Ensures impressive ID fidelity, offering diversity, promising text controllability, and high-quality generation.
 3. Can serve as an **Adapter** to collaborate with other Base Models alongside LoRA modules in community.
 
-
 ---
+
+❗❗ Note: If there are any PhotoMaker based resources and applications, please leave them in the [discussion](https://github.com/TencentARC/PhotoMaker/discussions/36) and we will list them in the [Related Resources](https://github.com/TencentARC/PhotoMaker?tab=readme-ov-file#related-resources) section in README file.
+Now we know the implementation of **Replicate**, **Windows**, **ComfyUI**, and **WebUI**. Thank you all! 
 
 <div align="center">
 
@@ -75,11 +77,24 @@ Note: only change the base model and add the LoRA modules for better stylization
 - Python >= 3.8 (Recommend to use [Anaconda](https://www.anaconda.com/download/#linux) or [Miniconda](https://docs.conda.io/en/latest/miniconda.html))
 - [PyTorch >= 2.0.0](https://pytorch.org/)
 ```bash
+conda create --name photomaker python=3.10
+conda activate photomaker
+pip install -U pip
+
+# Install requirements
 pip install -r requirements.txt
+
+# Install photomaker
+pip install git+https://github.com/TencentARC/PhotoMaker.git
+```
+
+Then you can run the following command to use it
+```python
+from photomaker import PhotoMakerStableDiffusionXLPipeline
 ```
 
 # ⏬ Download Models 
-The model will be automatically downloaded through following two lines:
+The model will be automatically downloaded through the following two lines:
 
 ```python
 from huggingface_hub import hf_hub_download
@@ -98,7 +113,7 @@ import torch
 import os
 from diffusers.utils import load_image
 from diffusers import EulerDiscreteScheduler
-from photomaker.pipeline import PhotoMakerStableDiffusionXLPipeline
+from photomaker import PhotoMakerStableDiffusionXLPipeline
 
 ### Load base model
 pipe = PhotoMakerStableDiffusionXLPipeline.from_pretrained(
@@ -175,15 +190,32 @@ python gradio_demo/app.py
 
 You could customize this script in [this file](gradio_demo/app.py).
 
+If you want to run it on MAC, you should follow [this Instruction](MacGPUEnv.md) and then run the app.py.
+
 ## Usage Tips:
-- Upload more photos of the person to be customized to improve ID fidelty. If the input is Asian face(s), maybe consider adding 'asian' before the class word, e.g., `asian woman img`
-- When stylizing, does the generated face look too realistic? Adjust the Style strength to 30-50, the larger the number, the less ID fidelty, but the stylization ability will be better. You could also try out other base models or LoRAs with good stylization effects.
+- Upload more photos of the person to be customized to improve ID fidelity. If the input is Asian face(s), maybe consider adding 'asian' before the class word, e.g., `asian woman img`
+- When stylizing, does the generated face look too realistic? Adjust the Style strength to 30-50, the larger the number, the less ID fidelity, but the stylization ability will be better. You could also try out other base models or LoRAs with good stylization effects.
 - For faster speed, reduce the number of generated images and sampling steps. However, please note that reducing the sampling steps may compromise the ID fidelity.
 
+# Related Resources
+### Replicate demo of PhotoMaker: 
+[Demo link](https://replicate.com/jd7h/photomaker) by [@yorickvP](https://github.com/yorickvP), transfer PhotoMaker to replicate.
+### Windows version of PhotoMaker: 
+1. [bmaltais/PhotoMaker](https://github.com/bmaltais/PhotoMaker/tree/v1.0.1) by [@bmaltais](https://github.com/bmaltais), easy to deploy PhotoMaker on Windows. The description can be found in [this link](https://github.com/TencentARC/PhotoMaker/discussions/36#discussioncomment-8156199).
+2. [sdbds/PhotoMaker-for-windows](https://github.com/sdbds/PhotoMaker-for-windows/tree/windows) by [@sdbds](https://github.com/bmaltais).
+### ComfyUI:
+1. https://github.com/ZHO-ZHO-ZHO/ComfyUI-PhotoMaker
+2. https://github.com/StartHua/Comfyui-Mine-PhotoMaker
+3. https://github.com/shiimizu/ComfyUI-PhotoMaker
+
+### Graido demo in 45 lines
+Provided by [@Gradio](https://twitter.com/Gradio/status/1747683500495691942)
+
 # 🤗 Acknowledgements
-- T2I-Adapter is co-hosted by Tencent ARC Lab and Nankai University [MCG-NKU](https://mmcheng.net/cmm/).
+- PhotoMaker is co-hosted by Tencent ARC Lab and Nankai University [MCG-NKU](https://mmcheng.net/cmm/).
 - Inspired from many excellent demos and repos, including [IP-Adapter](https://github.com/tencent-ailab/IP-Adapter), [multimodalart/Ip-Adapter-FaceID](https://huggingface.co/spaces/multimodalart/Ip-Adapter-FaceID), [FastComposer](https://github.com/mit-han-lab/fastcomposer), and [T2I-Adapter](https://github.com/TencentARC/T2I-Adapter). Thanks for their great works!
 - Thanks for Venus team in Tencent PCG for their feedback and suggestions.
+- Thanks for HuggingFace team for their generous support! 
 
 # Disclaimer
 This project strives to positively impact the domain of AI-driven image generation. Users are granted the freedom to create images using this tool, but they are expected to comply with local laws and utilize it in a responsible manner. The developers do not assume any responsibility for potential misuse by users.
