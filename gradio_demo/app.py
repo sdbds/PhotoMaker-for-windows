@@ -7,12 +7,10 @@ import sys
 
 from diffusers.utils import load_image
 from diffusers import EulerDiscreteScheduler
-from diffusers.models.attention_processor import AttnProcessor2_0
 
 from huggingface_hub import hf_hub_download
 import spaces
 import gradio as gr
-from omegaconf import OmegaConf
 
 from photomaker.pipeline import PhotoMakerStableDiffusionXLPipeline
 from photomaker.model_util import load_models_xl, get_torch_device, torch_gc
