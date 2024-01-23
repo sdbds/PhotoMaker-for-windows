@@ -66,8 +66,6 @@ def main(pretrained_model_name_or_path="SG161222/RealVisXL_V3.0"):
 
         pipe.scheduler = EulerDiscreteScheduler.from_config(pipe.scheduler.config)
 
-    pipe.set_attn_processor(AttnProcessor2_0())
-
     pipe.load_photomaker_adapter(
         os.path.dirname(photomaker_ckpt),
         subfolder="",
