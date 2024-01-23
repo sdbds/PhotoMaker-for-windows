@@ -19,6 +19,7 @@ from style_template import styles
 def main(pretrained_model_name_or_path="SG161222/RealVisXL_V3.0"):
     # global variable
     device = get_torch_device()
+    torch_dtype = torch.float16 if str(device).__contains__("cuda") else torch.float32
     MAX_SEED = np.iinfo(np.int32).max
     STYLE_NAMES = list(styles.keys())
     DEFAULT_STYLE_NAME = "Photographic (Default)"
@@ -40,7 +41,7 @@ def main(pretrained_model_name_or_path="SG161222/RealVisXL_V3.0"):
         (tokenizers, text_encoders, unet, _, vae) = load_models_xl(
             pretrained_model_name_or_path=pretrained_model_name_or_path,
             scheduler_name=None,
-            weight_dtype=torch.float16,
+            weight_dtype=torch_dtype,
         )
 
         scheduler = EulerDiscreteScheduler.from_config(scheduler_kwargs)
@@ -57,7 +58,7 @@ def main(pretrained_model_name_or_path="SG161222/RealVisXL_V3.0"):
     else:
         pipe = PhotoMakerStableDiffusionXLPipeline.from_pretrained(
             pretrained_model_name_or_path,
-            torch_dtype=torch.bfloat16,
+            torch_dtype=torch_dtype,
             use_safetensors=True,
             variant="fp16",
         ).to(device)
