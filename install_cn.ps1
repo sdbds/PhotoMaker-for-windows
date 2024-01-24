@@ -1,15 +1,16 @@
 Set-Location $PSScriptRoot
 
 $Env:PIP_DISABLE_PIP_VERSION_CHECK = 1
+$Env:PIP_INDEX_URL = "https://mirror.baidu.com/pypi/simple"
 
 if (!(Test-Path -Path "venv")) {
-    Write-Output  "´´½¨pythonÐéÄâ»·¾³venv..."
+    Write-Output  "ï¿½ï¿½ï¿½ï¿½pythonï¿½ï¿½ï¿½â»·ï¿½ï¿½venv..."
     python -m venv venv
 }
 .\venv\Scripts\activate
 
-Write-Output "°²×°ÒÀÀµ..."
-pip install -U -r requirements-windows.txt -i https://mirror.baidu.com/pypi/simple
+Write-Output "ï¿½ï¿½×°ï¿½ï¿½ï¿½ï¿½..."
+pip install -U -r requirements-windows.txt
 
 $SOURCEFILE="photomaker/wrappers.py"
 
@@ -17,5 +18,5 @@ $TARGETFILE="venv/Lib/site-packages/spaces/zero/wrappers.py"
 
 Copy-Item -Path $SOURCEFILE -Destination $TARGETFILE -Force
 
-Write-Output "°²×°Íê±Ï"
+Write-Output "ï¿½ï¿½×°ï¿½ï¿½ï¿½"
 Read-Host | Out-Null ;
